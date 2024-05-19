@@ -1,0 +1,510 @@
+// ==UserScript==
+// @name Moomoo Bots Visual
+// @namespace http://tampermonkey.net/
+// @description 3 bots will spawn and start going to your location. You can control them by typing in the chat. Commands include "attack", "team", "upgrade", and "follow". To team bots write "team [your team name]"
+// @version 1.36
+// @author HANS
+// @match *://*.moomoo.io/*
+// @icon none
+// @grant none
+// @license MIT
+// @require https://greasyfork.org/scripts/423602-msgpack/code/msgpack.js
+// @require https://greasyfork.org/scripts/478839-moomoo-io-packet-code/code/MooMooio%20Packet%20Code.js
+// ==/UserScript==
+
+const SANDBOX = location.hostname == "sandbox.moomoo.io";
+const NOSANDBOX = !SANDBOX;
+document.querySelector("#gameName").remove();
+document.querySelector("#chatButton").remove();
+document.getElementById("promoImgHolder").remove();
+document.querySelector("#partyButton.inParty").remove();
+document.querySelector("#pre-content-container").remove();
+document.getElementById("mainMenu").style.backgroundColor = "initial";
+document.getElementById("setupCard").style.backgroundColor = "initial";
+document.getElementById("guideCard").style.backgroundColor = "initial";
+document.getElementById("linksContainer2").style.backgroundColor = "initial";
+//document.getElementById("mapDisplay").style.backgroundImage = 'url("https://wormax.org/chrome3kafa/moomooio-background.png")';
+//document.getElementById("storeHolder").style.backgroundColor = "initial";
+//document.getElementById("allianceHolder").style.backgroundColor = "initial";
+
+const nameInput = document.getElementById("nameInput");
+nameInput.style.width = "300px";
+nameInput.style.height = "40px";
+nameInput.style.backgroundColor = "initial";
+nameInput.style.color = "#333";
+nameInput.style.border = "1px solid #ccc";
+nameInput.style.borderRadius = "25px";
+nameInput.style.padding = "5px";
+nameInput.style.fontSize = "20px";
+
+var serverBrowser = document.getElementById("serverBrowser");
+serverBrowser.style.height = "20px";
+serverBrowser.style.width = "280px";
+
+const enterGameButton = document.getElementById("enterGame");
+enterGameButton.style.width = "300px";
+enterGameButton.style.height = "40px";
+enterGameButton.style.backgroundColor = "rgba(0, 255, 0, 0.5)";
+enterGameButton.style.color = "#333";
+nameInput.style.borderRadius = "25px";
+enterGameButton.style.border = "1px solid #ccc";
+enterGameButton.style.padding = "5px";
+enterGameButton.style.fontSize = "20px";
+enterGameButton.style.borderRadius = "25px";
+//enterGameButton.style.position = "absolute";
+//enterGameButton.style.left = "450px";
+
+var setupCardElement = document.getElementById("setupCard");
+if (setupCardElement) {
+    setupCardElement.style.position = "relative";
+    setupCardElement.style.height = "700px";
+    setupCardElement.style.top = "330px";
+}
+var backButton = document.querySelector('a[href="//moomoo.io/"]');
+if (backButton) {
+    backButton.style.color = "black";
+    backButton.style.fontSize = "17px";
+    backButton.textContent = "moomoo.io";
+}
+var guideCard = document.getElementById("guideCard");
+if (guideCard) {
+    guideCard.style.position = "absolute";
+    guideCard.style.top = "40%";
+    guideCard.style.left = "38%";
+    guideCard.style.width = "20%";
+    guideCard.style.height = "4px";
+    guideCard.style.display = 'block';
+}
+
+var link = document.querySelector("#linksContainer2 a");
+if (link) {
+    link.style.color = "black";
+}
+
+var adCard = document.getElementById("adCard");
+if (adCard) {
+    adCard.parentNode.removeChild(adCard);
+}
+var wideAdCard = document.getElementById("wideAdCard");
+if (wideAdCard) {
+    wideAdCard.parentNode.removeChild(wideAdCard);
+}
+var desktopInstructions = document.getElementById("desktopInstructions");
+if (desktopInstructions) {
+    desktopInstructions.remove();
+}
+var menuTextElements = document.querySelectorAll(".menuText");
+menuTextElements.forEach(function (element) {
+    element.remove();
+});
+var menuHeaderElements = document.querySelectorAll('.menuHeader');
+menuHeaderElements.forEach(function (element) {
+    if (element.style.marginTop === "10px") {
+        element.remove();
+    }
+});
+var menuHeaders = document.getElementsByClassName("menuHeader");
+for (var i = 0; i < menuHeaders.length; i++) {
+    if (menuHeaders[i].textContent.trim() === "Controls") {
+        menuHeaders[i].parentNode.removeChild(menuHeaders[i]);
+        break;
+    }
+}
+var serversHeader = document.querySelector('.menuHeader');
+if (serversHeader && serversHeader.textContent.trim() === "Servers") {
+    serversHeader.parentNode.removeChild(serversHeader);
+}
+if (guideCard) {
+    guideCard.style.overflow = "hidden";
+    guideCard.style.border = "none";
+}
+
+var discordLink = document.querySelector('a[href="https://discord.gg/MqpUzka"]');
+if (discordLink) {
+    discordLink.parentNode.removeChild(discordLink);
+}
+var privacyLink = document.querySelector('a[href="https://frvr.com/legal#PrivacyPolicy"]');
+if (privacyLink) {
+    privacyLink.parentNode.removeChild(privacyLink);
+}
+var termsLink = document.querySelector('a[href="https://frvr.com/legal#TermsofService"]');
+if (termsLink) {
+    termsLink.parentNode.removeChild(termsLink);
+}
+var sandboxLink = document.querySelector('a[href="//sandbox.moomoo.io/"]');
+if (sandboxLink) {
+    sandboxLink.style.color = "black";
+    sandboxLink.style.fontSize = "17px";
+    sandboxLink.textContent = "sandbox.moomoo.io";
+}
+var storeHolder = document.getElementById("storeHolder");
+storeHolder.style.height = "1150px";
+storeHolder.style.width = "400px";
+storeHolder.style.border = "1px solid #000000";
+storeHolder.style.overflow = "auto";
+storeHolder.style.webkitOverflowScrolling = "touch";
+storeHolder.style.scrollbarWidth = "none";
+storeHolder.style.position = "relative";
+storeHolder.style.resize = "vertical";
+storeHolder.style.overflow = "auto";
+storeHolder.style.border = "1px solid #000000";
+
+const resizeHandles = document.createElement("div");
+resizeHandles.style.position = "absolute";
+resizeHandles.style.width = "20px";
+resizeHandles.style.height = "40px";
+resizeHandles.style.backgroundColor = "#000";
+resizeHandles.style.borderRadius = "50%";
+resizeHandles.style.cursor = "ns-resize";
+resizeHandles.style.top = "0";
+resizeHandles.style.left = "50%";
+resizeHandles.style.transform = "translateX(-50%)";
+resizeHandles.className = "resize-handle";
+storeHolder.appendChild(resizeHandles);
+let startY, startHeight;
+resizeHandles.addEventListener("mousedown", function (e) {
+    startY = e.clientY;
+    startHeight = parseInt(document.defaultView.getComputedStyle(storeHolder).height, 10);
+    document.addEventListener("mousemove", resizeElement);
+    document.addEventListener("mouseup", stopResize);
+});
+function resizeElement(e) {
+    const newHeight = startHeight + e.clientY - startY;
+    storeHolder.style.height = newHeight + "px";
+}
+function stopResize() {
+    document.removeEventListener("mousemove", resizeElement);
+    document.removeEventListener("mouseup", stopResize);
+}
+
+let itemInfoHolder = document.getElementById("itemInfoHolder");
+itemInfoHolder.style.border = "1px solid black";
+itemInfoHolder.style.padding = "10px";
+itemInfoHolder.style.borderRadius = "20px";
+var joinPartyButton = document.getElementById("joinPartyButton");
+
+if (joinPartyButton) {
+    joinPartyButton.style.position = "absolute";
+    joinPartyButton.style.top = "10px";
+    joinPartyButton.style.right = "1%";
+    if (SANDBOX) {
+        var clonedButton = joinPartyButton.cloneNode(true);
+        joinPartyButton.parentNode.replaceChild(clonedButton, joinPartyButton);
+        clonedButton.style.cursor = "auto";
+        clonedButton.innerText = "You Play Sandbox";
+        clonedButton.style.top = "10px";
+        clonedButton.style.right = "1%";
+    }
+}
+
+function createInfoElement(id, title, itemType) {
+    var info = document.createElement("div");
+    info.id = id;
+    info.style.backgroundColor = "rgba(0, 0, 0, 0.25)";
+    info.style.border = "1px solid #000000";
+    info.style.borderRadius = "15px";
+    info.style.position = "fixed";
+    info.style.top = "5%";
+    info.style.left = "2%";
+    info.style.minHeight = "190px";
+    info.style.width = "240px";
+    info.style.zIndex = "9999";
+    info.style.display = "none";
+    document.body.appendChild(info);
+
+    var heading = document.createElement("h2");
+    heading.style.fontSize = "25px";
+    heading.textContent = title;
+    heading.style.color = "white";
+    info.appendChild(heading);
+
+    var text = document.createElement("p");
+    text.id = id + "_text";
+    text.textContent = "//todo";
+    text.style.color = "white";
+    text.style.fontSize = "20px";
+    text.classList.add(itemType + "_info_text");
+    info.appendChild(text);
+
+    return text;
+}
+
+var woodwall_info_text = createInfoElement("woodwall_info", "Wood wall", "walls");
+var stonewall_info_text = createInfoElement("stonewall_info", "Stone wall", "walls");
+var castlewall_info_text = createInfoElement("castlewall_info", "Castle wall", "walls");
+var spike_info_text = createInfoElement("spike_info", "Spikes", "spikes");
+var spike_info2_text = createInfoElement("spike_info2", "Greater Spikes", "spikes");
+var poison_spike_info_text = createInfoElement("poison_spike_info", "Poison Spikes", "spikes");
+var spinning_spike_info_text = createInfoElement("spinning_spike_info", "Spinning Spikes", "spikes");
+var windmill_info_text = createInfoElement("windmill_info", "Windmill 1", "mills");
+var windmill2_info_text = createInfoElement("windmill2_info", "Windmill 2", "mills");
+var windmill3_info_text = createInfoElement("windmill3_info", "Windmill 3", "mills");
+var stone_info_text = createInfoElement("stone_info", "stone", "13");
+var sappling_info_text = createInfoElement("sappling_info", "sappling", "14");
+var pittrap_info_text = createInfoElement("pittrap_info", "Pit Trap", "15");
+var boostpad_info_text = createInfoElement("boostpad_info", "Boostpad", "16");
+var spawnpad_info_text = createInfoElement("spawnpad_info", "Spawnpad", "20");
+
+woodwall_info_text.textContent = "Text für die Holzwand.";
+stonewall_info_text.textContent = "Text für die Steinwand.";
+castlewall_info_text.textContent = "Text für die Schlosswand.";
+spike_info_text.textContent = "Text für die Spikes.";
+spike_info2_text.textContent = "Text für die Großen Spikes.";
+poison_spike_info_text.textContent = "Text für die Giftspitzen.";
+spinning_spike_info_text.textContent = "Text für die Drehenden Spikes.";
+windmill_info_text.textContent = "Text für die Windmühle 1.";
+windmill2_info_text.textContent = "Text für die Windmühle 2.";
+windmill3_info_text.textContent = "Text für die Windmühle 3.";
+stone_info_text.textContent = "Text für den stone.";
+sappling_info_text.textContent = "Text für den sappling.";
+pittrap_info_text.textContent = "Text für die Fallgrube.";
+boostpad_info_text.textContent = "Text für das Boostpad.";
+spawnpad_info_text.textContent = "Text für das Spawnpad.";
+
+var woodwall_sandbox_info_text = createInfoElement("woodwall_sandbox_info", "Wood wall", "walls");
+var stonewall_sandbox_info_text = createInfoElement("stonewall_sandbox_info", "Stone wall", "walls");
+var castlewall_sandbox_info_text = createInfoElement("castlewall_sandbox_info", "Castle wall", "walls");
+var spike_sandbox_info_text = createInfoElement("spike_sandbox_info", "Spikes", "spikes");
+var spike2_sandbox_info_text = createInfoElement("spike2_sandbox_info", "Greater Spikes", "spikes");
+var poison_spike_sandbox_info_text = createInfoElement("poison_spike_sandbox_info", "Poison Spikes", "spikes");
+var spinning_spike_sandbox_info_text = createInfoElement("spinning_spike_sandbox_info", "Spinning Spikes", "spikes");
+var windmill_sandbox_info_text = createInfoElement("windmill_sandbox_info", "Windmill 1", "mills");
+var windmill2_sandbox_info_text = createInfoElement("windmill2_sandbox_info", "Windmill 2", "mills");
+var windmill3_sandbox_info_text = createInfoElement("windmill3_sandbox_info", "Windmill 3", "mills");
+var stone_sandbox_info_text = createInfoElement("stone_sandbox_info", "stone", "13");
+var sappling_sandbox_info_text = createInfoElement("sappling_sandbox_info", "sappling", "14");
+var pittrap_sandbox_info_text = createInfoElement("pittrap_sandbox_info", "Pit Trap", "15");
+var boostpad_sandbox_info_text = createInfoElement("boostpad_sandbox_info", "Boostpad", "16");
+var spawnpad_sandbox_info_text = createInfoElement("spawnpad_sandbox_info", "Spawnpad", "20");
+
+woodwall_sandbox_info_text.textContent = "Text für die Holzwand.";
+stonewall_sandbox_info_text.textContent = "Text für die Steinwand.";
+castlewall_sandbox_info_text.textContent = "Text für die Schlosswand.";
+spike_sandbox_info_text.textContent = "Text für die Spikes.";
+spike2_sandbox_info_text.textContent = "Text für die Großen Spikes.";
+poison_spike_sandbox_info_text.textContent = "Text für die Giftspitzen.";
+spinning_spike_sandbox_info_text.textContent = "Text für die Drehenden Spikes.";
+windmill_sandbox_info_text.textContent = "Text für die Windmühle 1.";
+windmill2_sandbox_info_text.textContent = "Text für die Windmühle 2.";
+windmill3_sandbox_info_text.textContent = "Text für die Windmühle 3.";
+stone_sandbox_info_text.textContent = "Text für den stone.";
+sappling_sandbox_info_text.textContent = "Text für den sappling.";
+pittrap_sandbox_info_text.textContent = "Text für die Fallgrube.";
+boostpad_sandbox_info_text.textContent = "Text für das Boostpad.";
+spawnpad_sandbox_info_text.textContent = "Text für das Spawnpad.";
+
+
+function createOverlayForItem(item, overlayId, itemId, infoId, text = "", followItem = null) {
+    var overlayDiv = document.createElement("div");
+    overlayDiv.id = overlayId;
+    overlayDiv.classList.add("overlay");
+    overlayDiv.classList.add(itemId + "_overlay");
+    overlayDiv.style.borderRadius = "30px";
+    overlayDiv.style.position = "absolute";
+    overlayDiv.style.backgroundColor = "initial";
+    overlayDiv.style.color = "white";
+    overlayDiv.style.textAlign = "center";
+    overlayDiv.style.fontFamily = "Arial, sans-serif";
+    overlayDiv.style.fontWeight = "bold";
+    overlayDiv.style.fontSize = "16px";
+    overlayDiv.style.cursor = "pointer";
+    overlayDiv.innerText = text;
+    overlayDiv.style.zIndex = "9999";
+    document.body.appendChild(overlayDiv);
+
+    function updatePositionAndSize() {
+        var rect = item.getBoundingClientRect();
+
+        if (rect.width === 0 && rect.height === 0) {
+            overlayDiv.style.visibility = "hidden";
+        } else {
+
+            overlayDiv.style.top = rect.top + window.scrollY + "px";
+            overlayDiv.style.left = rect.left + window.scrollX + "px";
+            overlayDiv.style.width = item.offsetWidth + "px";
+            overlayDiv.style.height = item.offsetHeight + "px";
+
+            var isInTopLeftCorner = rect.top <= 30 && rect.left <= 30;
+
+            var hasMoved = rect.top !== overlayDiv.lastTop || rect.left !== overlayDiv.lastLeft;
+            overlayDiv.lastTop = rect.top;
+            overlayDiv.lastLeft = rect.left;
+
+            if (isInTopLeftCorner && hasMoved) {
+                overlayDiv.style.visibility = "hidden";
+            } else {
+                overlayDiv.style.visibility = "visible";
+            }
+        }
+
+        requestAnimationFrame(updatePositionAndSize);
+    }
+    updatePositionAndSize();
+
+    overlayDiv.addEventListener("mouseenter", function () {
+        var infoElement = document.getElementById(infoId);
+        if (infoElement) {
+            infoElement.style.display = "block";
+        }
+    });
+
+    overlayDiv.addEventListener("mouseleave", function () {
+        var infoElement = document.getElementById(infoId);
+        if (infoElement) {
+            infoElement.style.display = "none";
+        }
+    });
+
+    new ResizeObserver(updatePositionAndSize).observe(item);
+
+    return overlayDiv;
+}
+
+const enterGameButton1 = document.getElementById("enterGame");
+if (enterGameButton1 && SANDBOX) {
+    enterGameButton1.addEventListener("click", function () {
+        var wood_wall, stone_wall, castle_wall, spike_0, spike_2, poison_spike, spinning_spike, windmill, windmill_2, windmill_3, stone, sappling, pittrap, boostpad, spawnpad;
+
+        var findElementsInterval = setInterval(function () {
+            wood_wall = document.getElementById("actionBarItem19");
+            stone_wall = document.getElementById("actionBarItem20");
+            castle_wall = document.getElementById("actionBarItem21");
+            spike_0 = document.getElementById("actionBarItem22");
+            spike_2 = document.getElementById("actionBarItem23");
+            poison_spike = document.getElementById("actionBarItem24");
+            spinning_spike = document.getElementById("actionBarItem25");
+            windmill = document.getElementById("actionBarItem26");
+            windmill_2 = document.getElementById("actionBarItem27");
+            windmill_3 = document.getElementById("actionBarItem28");
+            stone = document.getElementById("actionBarItem29");
+            sappling = document.getElementById("actionBarItem30");
+            pittrap = document.getElementById("actionBarItem31");
+            boostpad = document.getElementById("actionBarItem32");
+            spawnpad = document.getElementById("actionBarItem36");
+            createOverlayForItem(wood_wall, "woodwall_overlay", "walls", "woodwall_sandbox_info", "0/99").onclick = wood_wall.onclick;
+            createOverlayForItem(stone_wall, "stone_wall_overlay", "walls", "stonewall_sandbox_info", "0/99").onclick = stone_wall.onclick;
+            createOverlayForItem(castle_wall, "castlewall_overlay", "walls", "castlewall_sandbox_info", "0/99").onclick = castle_wall.onclick;
+            createOverlayForItem(spike_0, "spike1_overlay", "spikes", "spike_sandbox_info", "0/299").onclick = spike_0.onclick;
+            createOverlayForItem(spike_2, "spike2_overlay", "spikes", "spike_sandbox_info2", "Spike").onclick = spike_2.onclick;
+            createOverlayForItem(poison_spike, "poison_spike_overlay", "spikes", "poison_spike_sandbox_info", "0/299").onclick = poison_spike.onclick;
+            createOverlayForItem(spinning_spike, "spinning_spike_overlay", "spikes", "spinning_spike_sandbox_info", "0/299").onclick = spinning_spike.onclick;
+            createOverlayForItem(windmill, "windmill_overlay", "mills", "windmill_sandbox_info", "0/299").onclick = windmill.onclick;
+            createOverlayForItem(windmill_2, "windmill2_overlay", "mills", "windmill2_sandbox_info", "0/299").onclick = windmill_2.onclick;
+            createOverlayForItem(windmill_3, "windmill3_overlay", "mills", "windmill3_sandbox_info", "0/299").onclick = windmill_3.onclick;
+            createOverlayForItem(stone, "stone_overlay", "13", "stone_sandbox_info", "0/99").onclick = stone.onclick;
+            createOverlayForItem(sappling, "sappling_overlay", "14", "sappling_sandbox_info", "0/99").onclick = sappling.onclick;
+            createOverlayForItem(pittrap, "pittrap_overlay", "15", "pittrap_sandbox_info", "0/99").onclick = pittrap.onclick;
+            createOverlayForItem(boostpad, "boostpad_overlay", "16", "boostpad_sandbox_info", "0/299").onclick = boostpad.onclick;
+            createOverlayForItem(spawnpad, "spawnpad_overlay", "20", "spawnpad_sandbox_info", "0/99").onclick = spawnpad.onclick;;
+
+            if (wood_wall && stone_wall && castle_wall && spike_0 && spike_2 && poison_spike && spinning_spike && windmill && windmill_2 && windmill_3 && stone && sappling && boostpad && spawnpad && pittrap) {
+                clearInterval(findElementsInterval);
+
+                var actionBarElement = document.getElementById("actionBar");
+                if (actionBarElement) {
+                    actionBarElement.style.display = "none";
+                    setTimeout(function () {
+                        actionBarElement.style.display = "block";
+                    }, 2800);
+                }
+            }
+        }, 100);
+
+        setTimeout(function () {
+            clearInterval(findElementsInterval);
+            console.log("Ein oder mehrere Elemente wurden nicht gefunden, führe den Code trotzdem aus.");
+        }, 10000);
+    });
+}
+
+if (enterGameButton1 && NOSANDBOX) {
+    enterGameButton1.addEventListener("click", function () {
+        var wood_wall, stone_wall, castle_wall, spike_0, spike_2, poison_spike, spinning_spike, windmill, windmill_2, windmill_3, stone, sappling, pittrap, boostpad, spawnpad;
+
+        var findElementsInterval = setInterval(function () {
+            wood_wall = document.getElementById("actionBarItem19");
+            stone_wall = document.getElementById("actionBarItem20");
+            castle_wall = document.getElementById("actionBarItem21");
+            spike_0 = document.getElementById("actionBarItem22");
+            spike_2 = document.getElementById("actionBarItem23");
+            poison_spike = document.getElementById("actionBarItem24");
+            spinning_spike = document.getElementById("actionBarItem25");
+            windmill = document.getElementById("actionBarItem26");
+            windmill_2 = document.getElementById("actionBarItem27");
+            windmill_3 = document.getElementById("actionBarItem28");
+            stone = document.getElementById("actionBarItem29");
+            sappling = document.getElementById("actionBarItem30");
+            pittrap = document.getElementById("actionBarItem31");
+            boostpad = document.getElementById("actionBarItem32");
+            spawnpad = document.getElementById("actionBarItem36");
+
+            createOverlayForItem(wood_wall, "woodwall_overlay", "walls", "woodwall_info", "0/30").onclick = wood_wall.onclick;
+            createOverlayForItem(stone_wall, "stone_wall_overlay", "walls", "stonewall_info", "0/30").onclick = stone_wall.onclick;
+            createOverlayForItem(castle_wall, "castlewall_overlay", "walls", "castlewall_info", "0/30").onclick = castle_wall.onclick;
+            createOverlayForItem(spike_0, "spike1_overlay", "spikes", "spike_info", "0/15").onclick = spike_0.onclick;
+            createOverlayForItem(spike_2, "spike2_overlay", "spikes", "spike_info2", "0/15").onclick = spike_2.onclick;
+            createOverlayForItem(poison_spike, "poison_spike_overlay", "spikes", "poison_spike_info", "0/15").onclick = poison_spike.onclick;
+            createOverlayForItem(spinning_spike, "spinning_spike_overlay", "spikes", "spinning_spike_info", "0/15").onclick = spinning_spike.onclick;
+            createOverlayForItem(windmill, "windmill_overlay", "mills", "windmill_info", "0/7").onclick = windmill.onclick;
+            createOverlayForItem(windmill_2, "windmill2_overlay", "mills", "windmill2_info", "0/7").onclick = windmill_2.onclick;
+            createOverlayForItem(windmill_3, "windmill3_overlay", "mills", "windmill3_info", "0/7").onclick = windmill_3.onclick;
+            createOverlayForItem(stone, "stone_overlay", "13", "stone_info", "0/1").onclick = stone.onclick;
+            createOverlayForItem(sappling, "sappling_overlay", "14", "sappling_info", "0/1").onclick = sappling.onclick;
+            createOverlayForItem(pittrap, "pittrap_overlay", "15", "pittrap_info", "0/6").onclick = pittrap.onclick;
+            createOverlayForItem(boostpad, "boostpad_overlay", "16", "boostpad_info", "0/12").onclick = boostpad.onclick;
+            createOverlayForItem(spawnpad, "spawnpad_overlay", "20", "spawnpad_info", "0/1").onclick = spawnpad.onclick;
+
+            if (wood_wall && stone_wall && castle_wall && spike_0 && spike_2 && poison_spike && spinning_spike && windmill && windmill_2 && windmill_3 && stone && sappling && boostpad && spawnpad && pittrap) {
+                clearInterval(findElementsInterval);
+
+                var actionBarElement = document.getElementById("actionBar");
+                if (actionBarElement) {
+                    actionBarElement.style.display = "none";
+                    setTimeout(function () {
+                        actionBarElement.style.display = "block";
+                    }, 2800);
+                }
+            }
+        }, 100);
+
+        setTimeout(function () {
+            clearInterval(findElementsInterval);
+            console.log("Ein oder mehrere Elemente wurden nicht gefunden, führe den Code trotzdem aus.");
+        }, 10000);
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//game Manager
+
+    let vulcanButtonExtendSettings = document.createElement("div");
+    vulcanButtonExtendSettings.style.position = "fixed";
+    vulcanButtonExtendSettings.style.top = "30%";
+    vulcanButtonExtendSettings.style.left = "40%";
+    vulcanButtonExtendSettings.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+    vulcanButtonExtendSettings.style.border = "1px solid #000";
+    vulcanButtonExtendSettings.style.borderRadius = "10px";
+    vulcanButtonExtendSettings.style.padding = "10px";
+    vulcanButtonExtendSettings.style.width = '300px';
+    vulcanButtonExtendSettings.style.height = '250px';
+    vulcanButtonExtendSettings.style.display = "none";
+    document.body.appendChild(vulcanButtonExtendSettings);
+
+    var vulcanButtonbutton = document.createElement("button");
+    vulcanButtonbutton.innerText = "More Settings";
+    vulcanButtonbutton.style.position = "fixed";
+    vulcanButtonbutton.style.display = "none";
+    vulcanButtonbutton.style.zIndex = "9999";
+    document.body.appendChild(vulcanButtonbutton);
+
+
