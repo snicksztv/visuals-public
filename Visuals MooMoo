@@ -487,7 +487,7 @@ if (enterGameButton1 && NOSANDBOX) {
 
 //game Manager
 
-    let vulcanButtonExtendSettings = document.createElement("div");
+ /* let vulcanButtonExtendSettings = document.createElement("div");
     vulcanButtonExtendSettings.style.position = "fixed";
     vulcanButtonExtendSettings.style.top = "30%";
     vulcanButtonExtendSettings.style.left = "40%";
@@ -500,11 +500,17 @@ if (enterGameButton1 && NOSANDBOX) {
     vulcanButtonExtendSettings.style.display = "none";
     document.body.appendChild(vulcanButtonExtendSettings);
 
-    var vulcanButtonbutton = document.createElement("button");
-    vulcanButtonbutton.innerText = "More Settings";
-    vulcanButtonbutton.style.position = "fixed";
-    vulcanButtonbutton.style.display = "none";
-    vulcanButtonbutton.style.zIndex = "9999";
-    document.body.appendChild(vulcanButtonbutton);
-
+var vulcanButton = document.createElement("div");
+vulcanButton.id = "vulcan_button";
+vulcanButton.style.backgroundImage = "url('https://i.ibb.co/HCPMkHz/vulcan-moomoo.png')";
+vulcanButton.style.display = "block";
+vulcanButton.classList.add("resourceDisplay")
+vulcanButton.style.border = "1px solid rgb(0, 0, 0)";
+vulcanButton.style.borderRadius = "15px";
+vulcanButton.style.pointerEvents = "all";
+vulcanButton.style.bottom = "185px";
+vulcanButton.style.cursor = "pointer";
+vulcanButton.innerText = "​";
+document.getElementById("resDisplay").appendChild(vulcanButton);
+*/
 
